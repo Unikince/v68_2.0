@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dmg.gameconfigserver.dao.sys.SysResourceDao">
+
+    <select id="getInfoByUserId" resultType="com.dmg.gameconfigserver.model.bean.sys.SysResourceBean">
+        SELECT
+        t_dmg_game_sys_resource.*
+        FROM t_dmg_game_sys_resource
+        LEFT JOIN t_dmg_game_sys_role_resource ON t_dmg_game_sys_role_resource.resource_id = t_dmg_game_sys_resource.id
+        LEFT JOIN t_dmg_game_sys_user ON t_dmg_game_sys_user.role_id = t_dmg_game_sys_role_resource.role_id
+        WHERE t_dmg_game_sys_user.id = #{userId} and t_dmg_game_sys_resource.is_deleted = 0
+        ORDER BY t_dmg_game_sys_resource.sort ASC
+    </select>
+
+    <select id="getCountByUserId" resultType="java.lang.Integer">
+        SELECT
+        COUNT(t_dmg_game_sys_resource.id)
+        FROM t_dmg_game_sys_resource
+        LEFT JOIN t_dmg_game_sys_role_resource ON t_dmg_game_sys_role_resource.resource_id = t_dmg_game_sys_resource.id
+        LEFT JOIN t_dmg_game_sys_user ON t_dmg_game_sys_user.role_id = t_dmg_game_sys_role_resource.role_id
+        WHERE t_dmg_game_sys_user.id = #{userId} AND t_dmg_game_sys_resource.url = #{url} and t_dmg_game_sys_resource.is_deleted = 0
+    </select>
+</mapper>

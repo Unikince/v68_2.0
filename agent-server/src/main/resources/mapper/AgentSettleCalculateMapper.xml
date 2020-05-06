@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 代理结算-计算 -->
+<mapper namespace="com.dmg.agentserver.business.dao.AgentSettleCalculateDao">
+
+	<!-- 获取结算原始数据 -->
+	<select id="getYesterdaySettleRecord" resultType="com.dmg.agentserver.business.model.bo.AgentSettleCalculateBo">
+		SELECT 
+	  	`user_id` AS userId,
+	  	`game_id` AS gameId,
+	  	`sum_bet` AS myPerformance 
+		FROM
+	  	`statement_player_game` 
+		WHERE TO_DAYS(NOW()) - TO_DAYS(day_str) = 1 
+	</select>
+
+	<!-- 获取所有游戏信息 -->
+	<select id="getAllGameInfo" resultType="com.dmg.agentserver.business.model.bo.AgentSettleCalculateBo">
+		SELECT
+			`game_id` AS gameId,
+			`game_name` AS gameName
+		FROM
+		`t_game_info`
+	</select>
+		
+	<!-- 查询指定日期的纪录 -->
+	<select id="getRecordByDate" resultType="com.dmg.agentserver.business.model.bo.AgentSettleRecordBo">
+		SELECT * FROM a_agent_settle_record WHERE day_str=DATE(#{date})
+	</select>
+	
+	<!-- 批量插入纪录 -->
+	<insert id="insertBatchRecord">
+		INSERT INTO `a_agent_settle_record` (
+		  day_str,
+		  user_id,
+		  user_nick,
+		  my_performance,
+		  sub_directly_performance,
+		  sub_team_performance,
+		  agent_level_id,
+		  my_brokerage,
+		  team_brokerage,
+		  history_brokerage
+		) 
+		VALUES   
+ 		<foreach collection ="list" item="po" separator =",">
+		(
+			#{po.dayStr}, 
+			#{po.userId}, 
+			#{po.userNick}, 
+			#{po.myBrokerage}, 
+			#{po.teamBrokerage}, 
+			#{po.myPerformance}, 
+			#{po.agentLevelId}, 
+			#{po.subDirectlyPerformance}, 
+			#{po.subTeamPerformance},
+			#{po.historyBrokerage}
+		)
+    </foreach >
+	</insert>
+	
+	<!-- 批量插入游戏详情 -->
+	<insert id="insertBatchDetail">
+		INSERT INTO `a_agent_settle_game_detail` (
+		  record_id,
+		  game_id,
+		  game_name,
+		  my_performance,
+		  sub_directly_performance,
+		  sub_team_performance
+		) 
+		VALUES   
+ 		<foreach collection ="list" item="po" separator =",">
+		(
+			#{po.recordId}, 
+			#{po.gameId}, 
+			#{po.gameName}, 
+			#{po.myPerformance}, 
+			#{po.subDirectlyPerformance}, 
+			#{po.subTeamPerformance}
+		)
+    </foreach >
+	</insert>
+	
+</mapper>

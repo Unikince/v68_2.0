@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dmg.gameconfigserver.dao.sys.SysWhiteDao">
+
+    <select id="getSysWhitePage" resultType="com.dmg.gameconfigserver.model.vo.sys.SysWhiteVO">
+        SELECT
+        t_dmg_game_sys_white.*,t_dmg_game_sys_user.user_name AS userName,t_dmg_game_sys_user.nick_name AS nickName
+        FROM t_dmg_game_sys_white
+        LEFT JOIN t_dmg_game_sys_user ON t_dmg_game_sys_user.id = t_dmg_game_sys_white.create_user
+        WHERE 1 = 1
+        <if test="ip != null and ip != ''">
+            AND t_dmg_game_sys_white.ip LIKE CONCAT('%',#{ip},'%')
+        </if>
+        ORDER BY t_dmg_game_sys_white.create_date DESC
+    </select>
+</mapper>

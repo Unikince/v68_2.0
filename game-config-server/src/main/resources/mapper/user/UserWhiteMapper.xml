@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dmg.gameconfigserver.dao.user.UserWhiteDao">
+
+    <select id="getUserWhitePage" resultType="com.dmg.gameconfigserver.model.vo.user.UserWhiteVO">
+        SELECT
+        t_dmg_user_white.id,
+        t_dmg_user.id AS userId,
+        t_dmg_user.user_name AS userName,
+        t_dmg_user.account_balance AS accountBalance,
+        t_dmg_user.strongbox_balance AS strongboxBalance
+        FROM t_dmg_user_white
+        LEFT JOIN t_dmg_user ON t_dmg_user.id = t_dmg_user_white.user_id
+        WHERE 1 = 1
+        <if test="userId != null and userId != ''">
+            AND t_dmg_user.id = #{userId}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND t_dmg_user.user_name LIKE CONCAT('%',#{userName},'%')
+        </if>
+        ORDER BY t_dmg_user_white.create_date DESC
+    </select>
+    <select id="getUserWhiteDeviceCode" resultType="java.lang.String">
+        SELECT
+        t_dmg_user.device_code
+        FROM t_dmg_user_white
+        LEFT JOIN t_dmg_user ON t_dmg_user.id = t_dmg_user_white.user_id
+        WHERE t_dmg_user.device_code IS NOT NULL
+    </select>
+
+</mapper>

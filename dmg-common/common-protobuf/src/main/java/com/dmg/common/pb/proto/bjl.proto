@@ -1,0 +1,450 @@
+syntax = "proto3";
+
+package msgbjl;
+option java_package = "com.dmg.common.pb.java";
+option java_outer_classname = "Bjl";
+
+enum BjlCode {
+    SUCCESS = 0; //成功
+    FULL_PLAYER = 204001; //玩家进入房间人数已满
+    TIMEOUT_EXIT = 204002; //超时未操作退出游戏
+    BET_PLAYER_NOT_LOWER = 204003; //下注玩家不够房间下限
+    BET_PLAYER_NOT_ALLOW_EXIT = 204004; //下注玩家不能退出房间
+    BET_PLAYER_NOT_PAY = 204011; //下注玩家不够支付
+    BET_BANKER_NOT_PAY = 204012; //下注庄家不够支付
+    BET_AREA_OVER = 204013; //超过区域下注限制
+    BET_SEAT_OVER = 204014; //超过玩家下注限制
+    BET_OVERFLOW = 204015; //超出最大下注限制
+    BET_NOT_ENOUGH_GOLD = 204016; //金币足不 不能下注
+    BET_GOLD_ERROR = 204017; //下注金币错误
+    ROOM_CLOSED = 204034; //该房间已经关闭
+    STOP_SERVER = 204099; //停服
+}
+
+//筹码下注区域索引
+enum BetZoneType{  //下注区
+    DRAW = 0; //和
+    BANKBER =1; //庄
+    PLAYER = 2; //闲
+    STREAK_BANKER = 3; //庄连胜
+    STREAK_PLAYER = 4; //闲连胜
+	ZONE_MAX = 5; //最大区域
+}
+
+//游戏模式
+enum GameMode{
+    AREA_ALL_OPEN = 0;
+    DRAGON_DRAW_TIGER = 103;//只开放龙虎和 ( 1<<0| 1<<1|0<<6) 要开放哪个模式 就是用 (1<<BetZoneType.A)|(1<<BetZoneType.B)|...
+}
+
+enum CardZone{ //牌区
+    Dragon = 0;
+    Tiger = 1;
+}
+
+//<!-- bean定义 -->
+//玩家信息
+message PlayerInfo {
+    sint64 id = 1; //玩家id
+    string name = 2; //昵称
+    sint64 sex = 3; //性别
+    sint64 gold = 4; //金币
+    string avatar = 5; //头像
+}
+
+//房间信息
+message RoomInfo
+{
+    sint32 id = 1; //房间id
+    string name = 2; //房间名称
+    sint64 lower = 3; //进入下限
+    sint32 seatNumber = 4; //当前人数
+    sint64 betLower = 5;// 最小筹码
+    sint64 betUpper = 6;// 最大筹码
+    repeated RouteInfo routeInfo = 7;//录像图
+    sint32 stage = 8; //1:下注,2:游戏,3:确认连庄阶段,4:补码,5:休息
+    sint32 time = 9; //阶段剩余时间(秒)
+}
+
+message CardGroup{
+    repeated sint32 card = 1;
+}
+
+
+//手牌信息
+message HandCardInfo
+{
+    repeated CardGroup cardGroup = 1;
+}
+
+//路线信息
+message RouteInfo
+{
+    int32 items = 1; //路线的信息(0-和 1-庄赢 2-闲赢)
+    HandCardInfo cardInfo = 2;
+}
+
+//区域下注信息
+message AreaBetInfo
+{
+    sint32 area = 1; //下注区域 參考BetZoneType
+    sint64 gold = 2; //下注金币
+}
+
+//区域下注筹码信息(无座同步，断线重连)
+message AreaBetCardInfo
+{
+    sint32 area = 1; //BetZoneType
+    repeated sint64 gold = 2; //下注金币
+    repeated sint64 playerId = 3; //玩家ID（用于无座下注 区别自己下注）
+}
+
+//座位信息
+message SeatInfo
+{
+    sint64 playerId = 1; //玩家id
+    string nickName = 2; //昵称
+    string icon = 3; //头像
+    sint64 gold = 4; //金币
+    sint32 seat = 6; //座位号
+    sint32 sex = 7; // 性别(0:男,非0:女)
+}
+
+//庄家信息
+message BankerInfo
+{
+    sint64 playerId = 1; //庄家id(0:系统)
+    string nickName = 2; //昵称
+    string icon = 3; //头像
+    sint64 gold = 4; //金币
+    sint32 num = 5; //局数
+    sint32 numUpper = 6; //局数上限
+    sint64 bankerGold = 7; //坐庄金币
+}
+
+//结算信息
+message BalanceInfo
+{
+    sint64 playerId = 1; //玩家id(0:系统)
+    sint64 winGold = 2; //总输赢
+    sint64 tax = 3; //税收
+    repeated sint64 winGolds = 4; //下注区的输赢,对应恭、喜、发、财,只结算回收筹码使用）
+}
+
+//我的明细（牌局明细）
+message SeatDetailedInfo
+{
+    string roomType = 1; //房间类型名
+    sint32 gameOverTime = 2; //结束时间 当前时间戳/1000
+    sint64 betStartGold = 3; //投注前余额
+    sint64 gold = 4; //结算后余额
+    sint64 winLoseGold = 5; //输赢金额
+    HandCardInfo cards = 6; //牌信息
+    repeated sint64 betGold = 8; //下注区金额
+    repeated sint64 winGold = 9; //赢的筹码
+}
+
+//战绩玩家基本信息（牌局明细）
+message SeatInfoRecord
+{
+    string nickName = 1; //昵称
+    string icon = 2; //头像
+    sint64 gold = 3; //金币
+    sint64 playerId = 4; //玩家ID
+}
+
+//	<!-- 服务器接收消息 -->
+
+//请求房间数据
+message ReqRooms
+{
+}
+
+//请求进入房间
+message ReqEnterRoom
+{
+    sint32 roomId = 1; //房间id
+}
+
+//请求下注
+message ReqBet
+{
+    AreaBetInfo bet = 1; //区域下注信息
+}
+
+//玩家续压
+message ReqPlayerContinueBet
+{
+    repeated AreaBetInfo bets = 1; //区域下注信息
+}
+
+// 请求退出房间
+message ReqExitRoom
+{
+}
+
+
+//请求无座玩家
+message ReqOtherPlayers
+{
+}
+
+//请求撤销筹码
+message ReqRevokeBet
+{
+}
+
+//请求我的明细
+message ReqSeatDetailed
+{
+}
+
+//请求盈利榜
+message ReqProfitList
+{
+}
+
+//请求上局赢家
+message ReqSeatWin
+{
+}
+
+
+//	<!-- 服务器发送消息 -->
+
+//返回房间数据
+message ResRooms
+{
+    repeated RoomInfo rooms = 1; //房间
+    PlayerInfo playerInfo = 2; //玩家信息
+    sint32 curRoomId = 3;//当前所在房间id
+}
+
+//进入房间结果
+message ResEnterRoom
+{
+    BjlCode code = 1; //code
+    sint32 roomId = 2; //房间id
+    repeated AreaBetInfo tableBets = 3; //_桌子区域下注信息
+    repeated AreaBetInfo playerBets = 4; //_玩家自己的区域下注信息
+    repeated AreaBetCardInfo tableBetCards = 5; //桌子所有区域下注信息(每个区域30个最近筹码)
+    SeatInfo seat = 6; //个人信息
+    BankerInfo banker = 7; //庄家信息
+    HandCardInfo cards = 8; //房间信息
+    repeated SeatInfo applicants = 9; //_申请庄家的信息
+    repeated SeatInfo ranks = 10; //桌子中的玩家信息
+    sint32 stage = 11; //1:下注,2:游戏,3:确认连庄阶段,4:补码,5:休息
+    sint32 time = 12; //时间(秒)
+    sint32 noSeats = 13; //无座人数
+    bool autoSat = 14; //是否自动坐下（true：坐下）
+
+    repeated RouteInfo routes = 17; //路线数据
+    BalanceInfo bankerBalance = 18; //庄家结算
+    repeated BalanceInfo rankPlayerBalances = 19; //排名玩家结算
+    sint64 playerGold = 20; //玩家结算金币
+	sint32 multipleMax = 21; //倍数下限
+	repeated sint32 multiple = 23; //所有倍率
+
+	GameMode gameMode = 24; //游戏模式
+	sint32 tableIndex = 25; //在哪个房间
+
+	sint64 betLower = 26; //当前房间的最低下注筹码额度
+    sint32 restCardNum = 27; //剩余牌数量
+    repeated sint32 betUpper = 28; //下注金币上限
+    
+   	repeated sint64 chips=29;//可用筹码
+   	
+   	
+   	sint64 playerMaxEffectiveBet=30;//玩家最大有效下注
+   	sint64 playerCurEffectiveBet=31;//玩家当前有效下注
+   	sint64 tableMaxEffectiveBet=32;//桌子最大有效下注
+   	sint64 tableCurEffectiveBet=33;//桌子当前有效下注
+   	
+   	sint32 godOfGamblersFirstBetTable=34;//赌神第一次下注位置
+}
+
+//玩家退出房间
+message ResExitRoom
+{
+    BjlCode code = 1; //code
+}
+
+//返回玩家区域下注结果
+message ResPlayerBet
+{
+    BjlCode code = 1; //code
+    sint64 playerId = 2; //玩家id(玩家自己或排名玩家)
+    AreaBetInfo bet = 3; //玩家区域下注信息
+    repeated AreaBetInfo tableBets = 4; //桌子所有区域下注信息
+    
+   	sint64 playerCurEffectiveBet=5;//玩家当前有效下注
+   	sint64 tableCurEffectiveBet=6;//桌子当前有效下注
+}
+
+//其他玩家(无座)下注结果
+message ResOtherPlayersBet
+{
+    repeated AreaBetInfo tableBets = 1; //桌子所有区域下注信息
+    repeated AreaBetCardInfo tableBetCards = 2; //桌子所有区域下注筹码信息(每个区域30个最近筹码)
+    
+   	sint64 tableCurEffectiveBet=6;//桌子当前有效下注
+}
+
+//庄家信息
+message ResBankerInfo
+{
+    BankerInfo banker = 1; //庄家
+}
+
+
+//排名玩家
+message ResRankPlayers
+{
+    repeated SeatInfo seats = 1; //有座玩家
+}
+
+//无座玩家
+message ResOtherPlayers
+{
+    repeated SeatInfo seats = 1; //无座玩家
+}
+
+
+message ResPlayersNtf
+{
+    repeated SeatInfo seats = 1; //玩家排名
+}
+
+//休息阶段
+message ResStage
+{
+    sint32 stage = 1; //1:下注,2:游戏,3:确认连庄阶段,4:补码,5:休息
+    sint32 time = 2; //时间(秒)
+}
+
+//玩家续压成功
+message ResContinueBet
+{
+    BjlCode code = 1; //code
+}
+
+//游戏结算消息
+message ResBalance
+{
+    HandCardInfo handCards = 1; //牌信息
+    RouteInfo route = 2; //这一局的输赢(路线)
+    BalanceInfo bankerBalance = 3; //庄家结算
+    repeated BalanceInfo rankPlayerBalances = 4; //排名玩家结算
+    sint64 playerGold = 5; //玩家结算金币
+    sint32 restCardNum = 6; //剩余牌数量
+    SeatInfoRecord winMaxPlayer = 7; //大赢家信息
+}
+
+//金币变化消息
+message ResGoldChange
+{
+    sint64 playerId = 1; //玩家id
+    sint64 gold = 2; //玩家金币
+	sint64 bankerGold = 3;//上庄金币
+}
+
+//其他玩家(无座)人数
+message ResOtherPlayerNum
+{
+    sint32 num = 1; //数量
+}
+
+//返回撤销筹码
+message ResRevokeBet
+{
+    sint64 playerId = 1; //玩家id
+    sint64 betGold = 2; //玩家下注的金币
+}
+
+//请求我的明细
+message ResSeatDetailed
+{
+    repeated SeatDetailedInfo seatDetailed = 1; //我的明细
+}
+
+//请求盈利榜
+message ResProfitList
+{
+    repeated SeatInfoRecord seatRecord = 1; //盈利榜
+    sint32 overTime = 2; //当前日期 （时间戳/1000）
+}
+
+//请求上局赢家
+message ResSeatWin
+{
+    repeated SeatInfoRecord seatWin = 1; //上局赢家
+}
+
+//当前机器人和真人的比例
+message ResPlayerRatio
+{
+    sint32 total = 1;
+    sint32 player = 2;
+}
+
+//金币同步
+message ResSyncSeat{
+    sint64 playerId = 1;
+    sint64 gold = 2;
+}
+//洗牌信息
+message ResShuffleInfo{
+    sint32 shuffleTime = 1;
+    sint32 cutCard = 2;
+    sint32 RestCardNum = 3;
+}
+
+// 金币充值消息
+message ResGoldPay {
+    sint64 playerId = 1; // 玩家id
+    sint64 gold = 2; // 玩家金币
+    sint64 paygold = 3; // 充值金币
+}
+
+
+enum BjlMessageId {
+    MESSAGE_ID_DEFAULT = 0;
+
+    ReqRooms_ID = 204101; // 请求房间数据
+    ReqEnterRoom_ID = 204103; // 请求进入房间
+    ReqBet_ID = 204105; // 请求下注
+    ReqPlayerContinueBet_ID = 204106; // 玩家续压
+    ReqExitRoom_ID = 204107; // 请求退出房间
+    ReqOtherPlayers_ID = 204115; // 请求无座玩家
+    
+    ResRooms_ID = 204201; // 返回房间数据
+    ResEnterRoom_ID = 204206; // 进入房间结果
+    ResExitRoom_ID = 204205; // 玩家退出房间
+    ResPlayerBet_ID = 204207; // 返回玩家区域下注结果
+    ResOtherPlayersBet_ID = 204209; // 其他玩家(无座)下注结果
+    ResBankerInfo_ID = 204213; // 庄家信息
+    ResRankPlayers_ID = 204215; // 排名玩家
+    ResOtherPlayers_ID = 204216; // 无座玩家
+    ResStage_ID = 204217; // 休息阶段
+    ResContinueBet_ID = 204219; // 玩家续压成功
+    ResBalance_ID = 204221; // 游戏结算消息
+    ResGoldChange_ID = 204223; // 金币变化消息
+    ResOtherPlayerNum_ID = 204225; // 其他玩家(无座)人数
+    ResPlayerRatio_ID = 204244;
+    ResSyncSeat_ID = 204245; //金币同步
+    ResShuffleInfo_ID = 204246;//洗牌信息
+    ResGoldPay_ID = 204247;
+
+
+	//删除--------------------------------------
+    ReqRevokeBet_ID = 204119; // 请求撤销筹码
+    ReqSeatDetailed_ID = 204121; // 请求我的明细
+    ReqProfitList_ID = 204123; // 请求盈利榜
+    ReqSeatWin_ID = 204125; // 请求上局赢家
+
+    ResRevokeBet_ID = 204229; // 返回撤销筹码
+    ResSeatDetailed_ID = 204231; // 请求我的明细
+    ResProfitList_ID = 204233; // 请求盈利榜
+    ResSeatWin_ID = 204243; // 请求上局赢家
+    //--------------------------------------删除
+}

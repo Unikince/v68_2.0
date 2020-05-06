@@ -1,0 +1,79 @@
+
+server:
+  port: 8033
+spring:
+  profiles:
+    active: dev
+  application:
+    name: gateway-server
+
+# hystrix 信号量隔离，3秒后自动超时
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          strategy: SEMAPHORE
+          thread:
+            timeoutInMilliseconds: 3000
+  shareSecurityContext: true
+
+# 暴露端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+
+# 打印网关日志信息
+logging:
+  level:
+    org.springframework.cloud.gateway: info
+
+---
+spring:
+  profiles: dev
+  redis:
+    password: zgqpgame123456
+    host: 47.56.245.118
+    lettuce:
+      pool:
+        max-idle: 10
+        min-idle: 0
+        max-active: 20
+        max-wait: -1
+    timeout: 3000
+# 注册中心
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.cloud.client.ip-address}:${spring.application.name}:${server.port}
+  client:
+    service-url:
+      defaultZone: http://47.56.245.118:8031/eureka/
+
+
+---
+spring:
+  profiles: prod
+  redis:
+    password: zgqpgame123456
+    host: 47.56.245.118
+    lettuce:
+      pool:
+        max-idle: 10
+        min-idle: 0
+        max-active: 20
+        max-wait: -1
+    timeout: 3000
+# 注册中心
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.cloud.client.ip-address}:${spring.application.name}:${server.port}
+  client:
+    service-url:
+      defaultZone: http://47.56.245.118:8031/eureka/

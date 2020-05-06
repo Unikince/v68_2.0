@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dmg.gameconfigserver.dao.user.UserDao">
+
+    <select id="getUserPage" resultType="com.dmg.gameconfigserver.model.vo.user.UserListVO">
+        SELECT
+        id,
+        user_code,
+        user_name,
+        user_type,
+        INSERT(phone, 4, 4, '****') AS phone,
+        account_balance,
+        create_date AS register_date,
+        account_status,
+        login_date,
+        register_ip,
+        CASE WHEN ((SELECT COUNT(id) FROM bank_card WHERE user_id = id) > 0) THEN TRUE ELSE FALSE END AS bindingCard
+        FROM t_dmg_user
+        WHERE 1 = 1
+        <if test="userId != null and userId != ''">
+            AND id = #{userId}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%',#{userName},'%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND phone = #{phone}
+        </if>
+        ORDER BY login_date DESC,create_date DESC
+    </select>
+
+    <select id="getUserInfoById" resultType="com.dmg.gameconfigserver.model.vo.user.UserVO">
+        SELECT
+        *,
+        INSERT(phone, 4, 4, '****') AS phone,
+        create_date AS register_date,
+        CASE WHEN ((SELECT COUNT(id) FROM bank_card WHERE user_id = id) > 0) THEN TRUE ELSE FALSE END AS bindingCard
+        FROM t_dmg_user
+        WHERE id = #{id}
+    </select>
+
+    <select id="countTodayLoginUser" resultType="java.lang.Long">
+        select count(1) from t_dmg_user where to_days(login_date) = to_days(now())
+    </select>
+
+    <select id="countTodayRegister" resultType="java.lang.Long">
+        select count(1) from t_dmg_user where to_days(create_date) = to_days(now())
+    </select>
+
+
+
+</mapper>

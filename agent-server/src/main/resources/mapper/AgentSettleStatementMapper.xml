@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 代理结算-统计 -->
+<mapper namespace="com.dmg.agentserver.business.dao.AgentSettleStatementDao">
+	<!-- 汇总 -->
+	<select id="collect" resultType="com.dmg.agentserviceapi.business.agentsettlerecord.model.dto.statement.AgentSettleRecordCollectRes">
+		SELECT
+			/** 玩家ID */
+			t_dmg_user.id AS userId,
+			/** 玩家昵称 */
+			t_dmg_user.user_name AS userNick,
+			/** 自得返佣*/
+		  IFNULL(SUM(my_brokerage), 0) AS myBrokerage,
+		  /** 自营业绩*/
+		  IFNULL(SUM(my_performance), 0) AS myPerformance,
+		  /** 直属下级业绩*/
+		  IFNULL(SUM(sub_directly_performance), 0) AS subDirectlyPerformance,
+		  /** 下级团队业绩*/
+		  IFNULL(SUM(sub_team_performance), 0) AS subTeamPerformance 
+		FROM t_dmg_user
+		LEFT JOIN a_agent_settle_record
+		ON t_dmg_user.id = a_agent_settle_record.user_id
+		<where>
+			<if test="reqVo.playerId > 0">
+				AND t_dmg_user.id= #{reqVo.playerId}
+			</if>
+		</where>
+		GROUP BY t_dmg_user.id
+		ORDER BY t_dmg_user.id DESC
+	</select>
+	
+	<!-- 汇总总共返佣 -->
+	<select id="collectAllBrokerage" resultType="java.math.BigDecimal">
+		SELECT IFNULL(SUM(my_brokerage), 0) FROM `a_agent_settle_record`
+	</select>
+	
+	<!-- 每日数据 -->
+	<select id="dayData" resultType="com.dmg.agentserviceapi.business.agentsettlerecord.model.dto.statement.AgentSettleRecordDayDataRes">
+		SELECT
+		  /** 日期*/
+		  day_str AS dayStr,
+		  /** 玩家id*/
+		  user_id AS userId,
+		  /** 玩家昵称*/
+		  user_nick AS userNick,
+		  /** 自得返佣*/
+		  IFNULL(SUM(my_brokerage), 0) AS myBrokerage,
+		  /** 自营业绩*/
+		  IFNULL(SUM(my_performance), 0) AS myPerformance,
+		  /** 直属下级业绩*/
+		  IFNULL(SUM(sub_directly_performance), 0) AS subDirectlyPerformance,
+		  /** 下级团队业绩*/
+		  IFNULL(SUM(sub_team_performance), 0) AS subTeamPerformance
+		FROM
+		  `a_agent_settle_record` 
+		<where>
+			AND user_id = #{reqVo.playerId} 
+			<if test="reqVo.startDate != null">
+				AND day_str &gt;= DATE(#{reqVo.startDate}) 
+			</if>
+			<if test="reqVo.endDate != null">
+				AND day_str &lt;= DATE(#{reqVo.endDate}) 
+			</if>
+		</where>
+		GROUP BY dayStr 
+		ORDER BY dayStr DESC 
+	</select>
+	
+	<!-- 每日数据_游戏详情 -->
+	<select id="dayDataDetails" resultType="com.dmg.agentserviceapi.business.agentsettlerecord.model.dto.statement.AgentSettleRecordDayDataDetailsRes">
+		SELECT 
+		  /** 日期*/
+		  day_str AS dayStr,
+		  /** 游戏id*/
+		  game_id AS gameId,
+		  /** 游戏名*/
+		  game_name AS gameName,
+		  /** 自营业绩*/
+		  IFNULL(d.my_performance, 0) AS myPerformance,
+		  /** 直属下级业绩*/
+		  IFNULL(d.sub_directly_performance, 0) AS subDirectlyPerformance,
+		  /** 下级团队业绩*/
+		  IFNULL(d.sub_team_performance, 0) AS subTeamPerformance 
+		FROM
+			`a_agent_settle_game_detail` d 
+		  LEFT JOIN `a_agent_settle_record` r
+		  ON d.record_id=r.id
+		<where>
+			AND user_id = #{reqVo.playerId} 
+			AND day_str = DATE(#{reqVo.gameDate})
+		</where>
+		ORDER BY game_id ASC
+	</select>
+	
+	<!-- 游戏详情 -->
+	<select id="datailsCollect" resultType="com.dmg.agentserviceapi.business.agentsettlerecord.model.dto.statement.AgentSettleRecordDatailsCollectRes">
+		SELECT 
+		  /** 日期*/
+		  day_str AS dayStr,
+		  /** 游戏id*/
+		  game_id AS gameId,
+		  /** 游戏名*/
+		  game_name AS gameName,
+		  /** 自营业绩*/
+		  IFNULL(SUM(d.my_performance), 0) AS myPerformance,
+		  /** 直属下级业绩*/
+		  IFNULL(SUM(d.sub_directly_performance), 0) AS subDirectlyPerformance,
+		  /** 下级团队业绩*/
+		  IFNULL(SUM(d.sub_team_performance), 0) AS subTeamPerformance 
+		FROM
+			`a_agent_settle_game_detail` d 
+		  LEFT JOIN `a_agent_settle_record` r
+		  ON d.record_id=r.id
+		<where>
+			AND user_id = #{reqVo.playerId} 
+		</where>
+		GROUP BY game_id ORDER BY game_id ASC
+	</select>
+	
+	<!-- 游戏详情_每日数据 -->
+	<select id="datailsCollectDayData" resultType="com.dmg.agentserviceapi.business.agentsettlerecord.model.dto.statement.AgentSettleRecordDatailsCollectDayDataRes">
+		SELECT 
+		  /** 日期*/
+		  day_str AS dayStr,
+		  /** 游戏id*/
+		  game_id AS gameId,
+		  /** 游戏名*/
+		  game_name AS gameName,
+		  /** 自营业绩*/
+		  IFNULL(d.my_performance, 0) AS myPerformance,
+		  /** 直属下级业绩*/
+		  IFNULL(d.sub_directly_performance, 0) AS subDirectlyPerformance,
+		  /** 下级团队业绩*/
+		  IFNULL(d.sub_team_performance, 0) AS subTeamPerformance 
+		FROM
+			`a_agent_settle_game_detail` d 
+		  LEFT JOIN `a_agent_settle_record` r
+		  ON d.record_id=r.id
+		<where>
+			AND user_id = #{reqVo.playerId} 
+			AND game_id = #{reqVo.gameId} 
+			<if test="reqVo.startDate != null">
+				AND day_str &gt;= DATE(#{reqVo.startDate}) 
+			</if>
+			<if test="reqVo.endDate != null">
+				AND day_str &lt;= DATE(#{reqVo.endDate}) 
+			</if>
+		</where>
+		ORDER BY dayStr DESC
+	</select>
+	
+</mapper>

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 每日报表 -->
+<mapper namespace="com.dmg.gameconfigserver.dao.statement.EveryDayStatementDao">
+	<!-- 更新数据表~~~~~~~~begin  -->
+
+	<!-- 更新新用户数量 -->
+	<update id="updateDataOfNewPlayerNum">
+		UPDATE
+			statement_everyday 
+		SET new_player_num =( 
+			SELECT 
+				COUNT(1) 
+			FROM t_dmg_user 
+			WHERE 
+				create_date &gt;= #{beginDate} 
+				AND create_date &lt;= #{endDate} 
+		) 
+		WHERE day_str = #{dayStr} 
+	</update>
+
+	<!-- 更新活跃用户数量  -->
+	<update id="updateDataOfActivePlayerNum">
+		UPDATE 
+			statement_everyday 
+		SET active_player_num =( 
+			SELECT 
+				COUNT(1) 
+			FROM t_login_log 
+			WHERE 
+				login_date = #{dayStr} 
+		) 
+		WHERE day_str = #{dayStr} 
+	</update>
+
+	<!-- 更新其他 -->
+	<update id="updateDataOfOther">
+	UPDATE 
+	  statement_everyday se 
+	  INNER JOIN (SELECT 
+	    /** 日期字符串 */
+	    day_str dayStr,
+	    /** 总盈利 */
+	    SUM(0-sum_win) AS sumWin,
+	    /** 服务费 */
+	    IFNULL(SUM(charge), 0) AS charge,
+	    /** 总下注 */
+	    IFNULL(SUM(sum_bet), 0) AS sumBet,
+	    /** 总赔付 */
+	    IFNULL(SUM(sum_pay), 0) AS sumPay,
+	    /** 总充值*/
+	    IFNULL(SUM(sum_recharge), 0) AS sumRecharge,
+	    /** 总提款*/
+	    IFNULL(SUM(sum_withdraw), 0) AS sumWithdraw,
+	    /*** 提存差 */
+	    IFNULL(SUM(sum_recharge) - SUM(sum_withdraw),0) AS diffRechargeSubWithdraw 
+	  FROM
+	    statement_player_user
+	  WHERE day_str = #{dayStr} 
+	  ) spu ON se.day_str=spu.dayStr
+	SET
+	  se.sum_win = spu.sumWin,
+	  se.sum_bet = spu.sumBet,
+	  se.sum_pay = spu.sumPay,
+	  se.charge = spu.charge,
+	  se.sum_recharge = spu.sumRecharge,
+	  se.sum_withdraw = spu.sumWithdraw,
+	  se.diff_recharge_sub_withdraw = spu.diffRechargeSubWithdraw,
+	  se.arpu = 
+	  CASE
+	    WHEN active_player_num > 0 
+	    THEN sumRecharge / active_player_num 
+	    ELSE 0 
+		END 
+	WHERE day_str = #{dayStr} 
+	</update>
+	<!-- 更新数据表~~~~~~~~end -->
+
+	<sql id="commonField">
+		/** 服务费 */
+		IFNULL(SUM(charge),0) AS charge,
+		/** 总下注 */
+		IFNULL(SUM(sum_bet),0) AS sumBet,
+		/** 总赔付 */
+		IFNULL(SUM(sum_pay),0) AS sumPay,
+		/** 总盈利 */
+		SUM(sum_win) AS sumWin,
+		/** 总充值*/
+		IFNULL(SUM(sum_recharge),0) AS sumRecharge,
+		/** 总提款*/
+		IFNULL(SUM(sum_withdraw),0) AS sumWithdraw,
+		/*** 提存差 */
+		IFNULL(SUM(sum_recharge)-SUM(sum_withdraw),0) AS diffRechargeSubWithdraw,
+		/** ARPU*/
+		IFNULL(SUM(arpu),0) AS ARPU
+	</sql>
+	
+	<!-- 汇总 -->
+	<select id="collect" resultType="com.dmg.gameconfigserver.model.vo.statement.everyday.EveryDayStatementCollectRes">
+		SELECT 
+			(SELECT COUNT(1) FROM t_dmg_user) AS registerNum,
+			<include refid="commonField" />
+		FROM statement_everyday
+	</select>
+	
+	<!-- 每日数据 -->
+	<select id="dayData" resultType="com.dmg.gameconfigserver.model.vo.statement.everyday.EveryDayStatementDayDataRes">
+		SELECT
+			/** 日期字符串 */
+			day_str AS dayStr,
+			/** 新增人数 */
+			new_player_num AS newPlayerNum,
+			/** 活跃人数 */
+			active_player_num AS activePlayerNum,
+			<include refid="commonField" />
+		FROM statement_everyday
+		<where>
+			<if test="reqVo.startDate != null">
+				AND day_str &gt;= DATE(#{reqVo.startDate}) 
+			</if>
+			<if test="reqVo.endDate != null">
+				AND day_str &lt;= DATE(#{reqVo.endDate}) 
+			</if>
+		</where>
+		GROUP BY dayStr 
+		ORDER BY dayStr DESC 
+	</select>
+</mapper>

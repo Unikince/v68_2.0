@@ -1,0 +1,71 @@
+server:
+  port: 8034
+  host: 47.56.245.118
+#  ssl:
+#    key-store: server.keystore
+#    key-alias: tomcat
+#    enabled: true
+#    key-store-password: Dmghy2018
+#    key-store-type: JKS
+
+spring:
+  application:
+    name: lobby-server
+  cloud:
+    config:
+      fail-fast: true
+      name: ${spring.application.name}
+      profile: ${spring.profiles.active}
+      discovery:
+        enabled: true
+        service-id: config-server
+  profiles:
+    active: dev
+  cache:
+    type: GENERIC
+  main:
+    allow-bean-definition-overriding: true
+  jackson:
+    time-zone: GMT+8
+
+# 注册中心配置
+eureka:
+  instance:
+    hostname: 47.56.245.118
+    prefer-ip-address: true
+    ip-address: ${server.host}
+  client:
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:8031/eureka/
+
+data:
+  server:
+    host: 47.56.245.118
+    port: 8036
+feign:
+  hystrix:
+    enabled: true
+ribbon:
+  ReadTimeout: 4000
+  ConnectTimeout: 6000
+hystrix:
+  threadpool:
+    default:
+      coreSize: 1000
+      maxQueueSize: 1000
+      queueSizeRejectionThreshold: 200
+  command:
+    default:
+      circuitBreaker:
+        requestVolumeThreshold: 50
+      execution:
+        timeout:
+          enabled: true
+        isolation:
+          strategy: THREAD
+          thread:
+            timeoutInMilliseconds: 11000
+      fallback:
+        isolation:
+          semaphore:
+            maxConcurrentRequests: 200

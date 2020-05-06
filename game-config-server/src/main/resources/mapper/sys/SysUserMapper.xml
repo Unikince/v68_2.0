@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dmg.gameconfigserver.dao.sys.SysUserDao">
+
+    <select id="getSysUserPage" resultType="com.dmg.gameconfigserver.model.vo.sys.SysUserVO">
+        SELECT
+        user.*,t_dmg_game_sys_role.name AS roleName,
+        t_dmg_game_sys_role.role AS role,
+        (SELECT nick_name FROM t_dmg_game_sys_user WHERE id = user.create_user) AS createUserNickName
+        FROM t_dmg_game_sys_user user
+        LEFT JOIN t_dmg_game_sys_role ON t_dmg_game_sys_role.id = user.role_id
+        WHERE 1 = 1
+        <if test="nickName != null and nickName != ''">
+            AND user.nick_name LIKE CONCAT('%',#{nickName},'%')
+        </if>
+        ORDER BY user.login_date DESC,user.create_date DESC
+    </select>
+</mapper>

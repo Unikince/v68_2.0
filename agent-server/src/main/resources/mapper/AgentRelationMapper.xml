@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 代理关系 -->
+<mapper namespace="com.dmg.agentserver.business.dao.AgentRelationDao">
+
+	<!-- 获取所有代理关系 -->
+	<select id="allRelation" resultType="com.dmg.agentserviceapi.business.agentrelation.model.pojo.AgentRelation">
+		SELECT 
+		  id,
+		  parent_id AS parentId,
+		  user_name AS userNick,
+		  bind_time AS bindTime 
+		FROM
+		  `t_dmg_user` 
+	</select>
+
+	<!-- 调用存储过程增加每日代理的直属下级人数 -->
+	<update id="addNewChildNum" statementType="CALLABLE">
+		{call agent_new_child_num(#{userId})}
+	</update>
+	
+		<!-- 绑定代理 -->
+	<update id="bindAgent">
+		UPDATE 
+		  t_dmg_user 
+		SET
+		  bind_time = #{bindTime},
+		  parent_id = #{parentId} 
+		WHERE id = #{playerId} 
+	</update>
+	
+	
+	<!-- 获取新增用户 -->
+	<select id="getNewChildNum" resultType="int">
+		SELECT 
+		  IFNULL(SUM(num), 0) 
+		FROM
+		  a_agent_new_people 
+		WHERE day_str = DATE(NOW()) 
+		  AND user_id = #{userId} 
+	</select>
+
+</mapper>

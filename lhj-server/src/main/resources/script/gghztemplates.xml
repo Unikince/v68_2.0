@@ -1,0 +1,6 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<scripts>
+	<file name="gghzodds.xlsx">
+		<sheet class = "com.zyhy.lhj_server.game.gghz.poi.template.GghzOdds"/>
+	</file>
+</scripts>

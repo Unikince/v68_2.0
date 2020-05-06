@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 游戏报表 -->
+<mapper namespace="com.dmg.gameconfigserver.dao.statement.GameStatementDao">
+	<!-- 公用查询字段,r=statement_game -->
+	<sql id="commonField">
+		/** 游戏id */
+		game_id AS gameId,
+		/** 游戏名称 */
+		game_name AS gameName,
+		/** 总盈利 */
+		SUM(sum_win) AS sumWin,
+		/** 总下注 */
+		SUM(sum_bet) AS sumBet,
+		/** 总赔付 */
+		SUM(sum_pay) AS sumPay,
+		/** 游戏次数 */
+		SUM(game_times) AS gameTimes,
+		/** 中奖次数 */
+		SUM(win_times) AS winTimes,
+		/** 中奖率 */
+		SUM(win_times) / SUM(game_times) AS winRatio,
+		/** 返奖率 */
+		SUM(sum_pay) / SUM(sum_bet) AS returnRate,
+		/** 服务费 */
+		SUM(charge) AS charge,
+		/** 平均下注 */
+		SUM(sum_bet) / SUM(game_times) AS aveBet,
+		/** 平均赔付 */
+		SUM(sum_pay) / SUM(game_times) AS avePay,
+		/** 最大下注 */
+		MAX(max_bet) AS maxBet,
+		/** 最大赔付 */
+		MAX(max_pay) AS maxPay 
+	</sql>
+
+	<!-- 汇总 -->
+	<select id="collect" resultType="com.dmg.gameconfigserver.model.vo.statement.game.GameStatementCollectDataRes">
+		SELECT g.*,p.playerNum FROM(
+			SELECT
+			<include refid="commonField" />
+			FROM statement_game
+			<where>
+				<if test="reqVo.gameId != null">
+					AND game_id = #{reqVo.gameId}
+				</if>
+			</where>
+			GROUP BY game_id ORDER BY game_id ASC
+		) g left join (
+			SELECT
+			/** 游戏id */
+			game_id as gameId,
+			/** 玩家人数 */
+			COUNT(1) AS playerNum
+			FROM
+			`statement_player_game`
+			<where>
+				<if test="reqVo.gameId != null">
+					AND game_id = #{reqVo.gameId}
+				</if>
+			</where>
+			GROUP BY game_id
+		) p on g.gameId=p.gameId
+	</select>
+
+	<!-- 每日数据 -->
+	<select id="dayData" resultType="com.dmg.gameconfigserver.model.vo.statement.game.GameStatementDayDataRes">
+		SELECT g.*,p.playerNum FROM(
+			SELECT
+			/** 日期字符串 */
+			day_str AS dayStr,
+			<include refid="commonField" />
+			FROM statement_game
+			<where>
+				<if test="reqVo.startDate != null">
+					AND day_str &gt;= DATE(#{reqVo.startDate})
+				</if>
+				<if test="reqVo.endDate != null">
+					AND day_str &lt;= DATE(#{reqVo.endDate})
+				</if>
+				AND game_id = #{reqVo.gameId}
+			</where>
+			GROUP BY dayStr ORDER BY dayStr DESC
+		) g left join (
+			SELECT
+			/** 日期字符串 */
+			day_str AS dayStr,
+			/** 游戏id */
+			game_id as gameId,
+			/** 玩家人数 */
+			COUNT(1) AS playerNum
+			FROM
+			`statement_player_game`
+			<where>
+				<if test="reqVo.startDate != null">
+					AND day_str &gt;= DATE(#{reqVo.startDate})
+				</if>
+				<if test="reqVo.endDate != null">
+					AND day_str &lt;= DATE(#{reqVo.endDate})
+				</if>
+				AND game_id = #{reqVo.gameId}
+			</where>
+			GROUP BY dayStr ORDER BY dayStr DESC
+		) p on g.dayStr=p.dayStr
+	</select>
+	
+	<!-- 每日数据_游戏详情 -->
+	<select id="dayDataDetails" resultType="com.dmg.gameconfigserver.model.vo.statement.game.GameStatementDayDataDetailsRes">
+		SELECT
+			/** 场次id */
+			file_id AS fileId,
+			/** 场次名称 */
+			file_name AS fileName,
+			<include refid="commonField" />
+		FROM statement_game
+		<where>
+			AND game_id = #{reqVo.gameId}
+			AND day_str = DATE(#{reqVo.gameDate})
+		</where>
+		GROUP BY file_id ORDER BY file_id ASC 
+	</select>
+	
+	<!-- 游戏详情 -->
+	<select id="datailsCollect" resultType="com.dmg.gameconfigserver.model.vo.statement.game.GameStatementDatailsCollectRes">
+		SELECT 
+			/** 场次id */
+			file_id AS fileId,
+			/** 场次名称 */
+			file_name AS fileName,
+			<include refid="commonField" />
+		FROM statement_game
+		<where>
+			AND game_id = #{reqVo.gameId} 
+		</where>
+		GROUP BY file_id ORDER BY file_id ASC
+	</select>
+	
+	<!-- 游戏详情_每日数据 -->
+	<select id="datailsCollectDayData" resultType="com.dmg.gameconfigserver.model.vo.statement.game.GameStatementDatailsCollectDayDataRes">
+		SELECT 
+			/** 日期字符串 */
+			day_str AS dayStr,
+			<include refid="commonField" />
+		FROM statement_game
+		<where>
+			<if test="reqVo.startDate != null">
+				AND day_str &gt;= DATE(#{reqVo.startDate}) 
+			</if>
+			<if test="reqVo.endDate != null">
+				AND day_str &lt;= DATE(#{reqVo.endDate}) 
+			</if>
+			AND game_id = #{reqVo.gameId} 
+			AND file_id = #{reqVo.fileId} 
+		</where>
+		GROUP BY dayStr ORDER BY dayStr DESC 
+	</select>
+	
+</mapper>

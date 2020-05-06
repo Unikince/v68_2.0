@@ -1,0 +1,18 @@
+﻿{"_m":"登陆","m":"Login"}
+
+{"_m":"进入房间_平民场","m":"EnterRoom","data":{"roomId":1}}
+{"_m":"进入房间_富商场","m":"EnterRoom","data":{"roomId":2}}
+{"_m":"进入房间_土豪场","m":"EnterRoom","data":{"roomId":3}}
+{"_m":"进入房间_大师场","m":"EnterRoom","data":{"roomId":4}}
+
+{"_m":"叫地主_不叫","m":"CallLandlord","data":{"call":0}}
+{"_m":"叫地主_1分","m":"CallLandlord","data":{"call":1}}
+{"_m":"叫地主_2分","m":"CallLandlord","data":{"call":2}}
+{"_m":"叫地主_3分","m":"CallLandlord","data":{"call":3}}
+
+{"_m": "玩家出牌_不出","m": "PlayCards","data": {"cards": []}}
+{"_m": "玩家出牌","m": "PlayCards","data": {"cards": [3]}}
+
+{"_m":"托管","m":"AutoPlay"}
+
+{"_m":"退出房间","m":"ExitRoom"}

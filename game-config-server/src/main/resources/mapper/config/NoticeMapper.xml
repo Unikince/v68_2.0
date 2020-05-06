@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dmg.gameconfigserver.dao.config.notice.NoticeDao">
+
+    <select id="getNoticeList" resultType="com.dmg.gameconfigserver.model.vo.config.notice.NoticePageVO">
+        SELECT
+        t_dmg_notice.*,t_dmg_game_sys_user.nick_name AS nickName,
+        CASE WHEN (t_dmg_notice.position = '0') THEN '所有界面'
+         WHEN (t_dmg_notice.position = '100') THEN '大厅'
+        ELSE (select game_name from t_game_info where game_id = t_dmg_notice.position)  END AS positionName,
+        CASE WHEN t_dmg_notice.start_date &gt; SYSDATE() THEN 0
+         WHEN <![CDATA[ t_dmg_notice.end_date < SYSDATE() ]]> THEN 1
+        ELSE 2  END AS sendStatus
+        FROM t_dmg_notice
+        LEFT JOIN t_dmg_game_sys_user ON t_dmg_game_sys_user.id = t_dmg_notice.modify_user
+        ORDER BY t_dmg_notice.modify_date DESC
+    </select>
+</mapper>

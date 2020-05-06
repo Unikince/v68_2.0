@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 提款报表 -->
+<mapper namespace="com.dmg.gameconfigserver.dao.statement.WithdrawStatementDao">
+	<!-- 公共查询字段 -->
+	<sql id="commonField">
+		/** 提款总额 */
+	  SUM(withdraw_amount) AS sumWithdraw,
+	  /** 提款总人数 */
+	  COUNT(DISTINCT user_id) AS sumPersion,
+	  /** 提款总次数 */
+	  COUNT(1) AS sumTimes,
+	  /** 单笔最大 */
+	  MAX(withdraw_amount) AS maxWithdraw,
+	  /** 单笔最小 */
+	  MIN(withdraw_amount) AS minWithdraw,
+	  /** 平均人提款 */
+	  IFNULL(SUM(withdraw_amount)/COUNT(DISTINCT user_id),0) AS avePersionWithdraw,
+	  /** 平均次提款 */
+	  IFNULL(SUM(withdraw_amount)/COUNT(1),0) AS avetTimesWithdraw,
+	  /** 平均人提次 */
+	  IFNULL(COUNT(1)/COUNT(DISTINCT user_id),0) AS avetPersionTimes
+	</sql>
+	
+	
+	<!-- 汇总 -->
+	<select id="collect" resultType="com.dmg.gameconfigserver.model.vo.statement.withdraw.WithdrawStatementCollectRes">
+		SELECT 
+			<include refid="commonField" />
+		 FROM t_withdraw_order 
+		 <where>
+		 	(order_status=15 OR order_status=20)
+		 </where>
+	</select>
+	
+	<!-- 每日数据 -->
+	<select id="dayData" resultType="com.dmg.gameconfigserver.model.vo.statement.withdraw.WithdrawStatementDayDataRes">
+		SELECT
+			/** 日期字符串 */
+			DATE_FORMAT(account_date, '%Y-%m-%d') AS dayStr,
+			<include refid="commonField" />
+		 FROM t_withdraw_order
+		<where>
+			(order_status=15  OR order_status=20)
+			<if test="reqVo.startDate != null">
+				AND DATE(account_date) &gt;= DATE(#{reqVo.startDate}) 
+			</if>
+			<if test="reqVo.endDate != null">
+				AND DATE(account_date) &lt;= DATE(#{reqVo.endDate}) 
+			</if>
+		</where>
+		GROUP BY dayStr 
+		ORDER BY dayStr DESC 
+	</select>
+</mapper>

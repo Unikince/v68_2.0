@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dmg.gameconfigserver.dao.home.GameOnlineRecordDao">
+
+    <select id="getGameOnlineRecordList" resultType="com.dmg.gameconfigserver.model.vo.home.GameOnlineRecordVO">
+        SELECT
+        t_dmg_game_online_record.record_date,
+        SUM(t_dmg_game_online_record.online_num) AS onlineNum
+        FROM t_dmg_game_online_record
+        WHERE 1 = 1
+        <if test="gameId != null and gameId != ''">
+            AND place = #{gameId}
+        </if>
+        <if test="fileId != null and fileId != ''">
+            AND file_id  = #{fileId}
+        </if>
+        GROUP BY record_date
+        ORDER BY t_dmg_game_online_record.record_date DESC LIMIT 720
+    </select>
+</mapper>

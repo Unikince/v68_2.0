@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 转账纪录 -->
+<mapper namespace="com.dmg.agentserver.business.dao.TransferAccountRecordDao">
+
+	<!-- 获取用户昵称 -->
+	<select id="getUserNickByUserId" resultType="java.lang.String">
+		SELECT
+			user_name
+		FROM `t_dmg_user`
+		<where>
+			id=#{userId}
+		</where>
+	</select>
+
+	<!-- 获取代理总充值 -->
+	<select id="getTotalAgentRecharge" resultType="java.math.BigDecimal">
+		SELECT
+			SUM(sum_recharge) AS totalAgentRecharge
+		FROM `statement_player_user`
+		<where>
+			user_id=#{sourceId}
+		</where>
+	</select>
+
+
+	<!-- 获取代理总流水 -->
+	<select id="getTotalAgentWater" resultType="java.math.BigDecimal">
+		SELECT
+		SUM(sum_bet) AS totalAgentWater
+		FROM `statement_player_user`
+		<where>
+			user_id=#{sourceId}
+		</where>
+	</select>
+
+	<!-- 获取代理今日转账次数 -->
+	<select id="getCountOfTimesToday" resultType="java.lang.Integer">
+		SELECT
+			COUNT(1)
+		FROM `a_transfer_account_record`
+		<where>
+			DATE_FORMAT(create_date, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d')
+			AND source_id = #{sourceId}
+		</where>
+	</select>
+
+	<!-- 获取代理今日转账金额 -->
+	<select id="getAmoutOfPayToday" resultType="java.math.BigDecimal">
+		SELECT
+			SUM(send_amount)
+		FROM `a_transfer_account_record`
+		<where>
+			DATE_FORMAT(create_time, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d')
+			AND source_id = #{sourceId}
+		</where>
+	</select>
+
+</mapper>

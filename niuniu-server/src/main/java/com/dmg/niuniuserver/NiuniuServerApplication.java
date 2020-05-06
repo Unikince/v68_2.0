@@ -1,0 +1,26 @@
+package com.dmg.niuniuserver;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cloud.netflix.hystrix.EnableHystrix;
+import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+/**
+ * 牛牛
+ */
+@SpringBootApplication
+@EnableHystrix
+@EnableScheduling
+@EnableCaching
+@EnableFeignClients
+@ComponentScan(basePackages = {"com.dmg.*"})
+public class NiuniuServerApplication {
+	
+	public static void main(String[] args) {
+		SpringApplication.run(NiuniuServerApplication.class, args);
+	}
+	
+}

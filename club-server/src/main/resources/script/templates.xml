@@ -1,0 +1,9 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<scripts>
+	<file name="content.json">
+		<sheet class="com.zyhy.lobby_server.poi.template.BaseUserInfo" />
+	</file>
+	<file name="lotteryRebate.xlsx">
+		<sheet class = "com.zyhy.lobby_server.poi.template.LotteryRebate"/>
+	</file>
+</scripts>

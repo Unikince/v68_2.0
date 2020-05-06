@@ -1,0 +1,285 @@
+syntax = "proto3";
+
+package msgfish;
+option java_package = "com.dmg.common.pb.java";
+option java_outer_classname = "Fish";
+
+// 捕鱼code
+enum FishCode {
+    SUCCESS = 0; // 成功
+    FULL_PLAYER = 201001; // 玩家进入房间人数已满
+    TIMEOUT_EXIT = 201002; // 超时未操作退出游戏
+    STOP_SERVER = 201099; //停服
+} 
+
+// 捕鱼房间信息
+message PlayerInfo {
+    sint64 id = 1; //玩家id
+    string name = 2; //昵称
+    sint64 sex = 3; //性别
+    double gold = 4; //金币
+    string avatar = 5; //头像
+}
+
+
+// 捕鱼房间信息
+message RoomInfo {
+    sint32 id = 1; // 房间id
+    string name = 2; // 房间名称
+    sint32 kickTime = 3; // 超过多少时间(秒)不发炮将玩家踢除房间
+    double batteryScoreLower = 4; // 炮台分数下限
+    double batteryScoreUpper = 5; // 炮台分数上限
+    double goldLimitLower = 6; // 入场金币下限
+    double goldLimitUpper = 7; // 入场金币上限
+}
+
+// 座位信息
+message SeatInfo {
+    sint64 playerId = 1; // 玩家id(0:代表座位上没有人)
+    string nickName = 2; // 昵称
+    sint32 order = 3; // 座位顺序
+    sint32 sex = 4; // 性别(0:男,非0:女)
+    bool online = 5; // 是否在线
+    string icon = 6; // 头像
+    double gold = 7; // 金币
+    double batteryScore = 9; //炮分数
+    sint32 batteryScoreIndex = 10; //炮分数序号
+}
+
+// 鱼信息
+message FishInfo {
+    sint32 fishId = 1; //鱼实列id
+    sint32 kind = 2; // 鱼的类型id
+    sint32 x = 3; // 起点x
+    sint32 y = 4; //起点y
+    sint32 route = 5; //路径id
+    sint32 speed = 6; //速度
+    sint32 time = 7; // 时间(毫秒)（当前时间-出生时间）
+}
+
+// 吃子弹鱼信息
+message EatBulletFishInfo {
+    sint32 kind = 1; // 鱼的类型id
+    sint32 addMultiple = 2; //额外增加的倍数
+}
+
+// 鱼死亡信息
+message FishDieInfo {
+    sint32 fishId = 1; // 鱼id
+    sint32 kind = 2; // 鱼的类型id
+    double score = 3; // 分数
+}
+
+// 服务器接收消息
+
+//请求房间数据
+message ReqRooms {
+}
+
+// 检查是否能进入房间
+message ReqCheckRoom {
+	sint32 roomId = 1; // 房间id
+}
+
+
+// 请求进入房间
+message ReqEnterRoom {
+    sint32 roomId = 1; // 房间id
+}
+
+// 请求开炮
+message ReqFire {
+    sint32 angle = 1; // 夹角
+    sint32 bulletId = 2; // 子弹id(客户端生成的唯一标识)
+    sint32 fishId = 3; //鱼ID（未锁定为0）RoomInfo
+}
+
+// 开炮返回
+message ResFire {
+    sint64 playerId = 1; // 发炮玩家
+    sint32 bulletId = 2; // 子弹id
+    sint32 angle = 3; // 夹角
+    sint32 fishId = 4; //鱼ID（未锁定为0）
+}
+
+// 请求子弹打中鱼
+message ReqHit {
+    sint64 playerId = 1; // 玩家id
+    sint32 bulletId = 2; // 子弹id
+    sint32 fishId = 3; // 鱼id
+}
+
+// 请求加炮
+message ReqPlusBattery {
+}
+
+// 请求减炮
+message ReqMinusBattery {
+}
+
+// 请求退出房间
+message ReqExitRoom {
+}
+
+// 玩家进入恢复游戏场景
+message ReqRestore {
+}
+
+// 请求锁定
+message ReqLock {
+    sint32 fishId = 1; // 锁定鱼
+}
+
+// 取消锁定
+message ReqCancelLock {
+}
+
+// 请求换桌
+message ReqExchangeTable {
+}
+
+//心跳
+message ReqHeartbeat {
+}
+
+// 服务器发送消息
+
+// 房间数据返回
+message ResRooms {
+    repeated RoomInfo rooms = 1; // 房间
+    PlayerInfo playerInfo = 2; //玩家信息
+}
+
+
+// 检查是否能进入房间
+message ResCheckRoom {
+	bool flag=1;
+}
+
+// 进入房间返回
+message ResEnterRoom {
+    FishCode code = 1; //捕鱼code
+    sint32 roomId = 2; //房间id
+}
+
+message ResExitRoom {
+    sint64 playerId = 1; // 玩家id
+}
+
+// 其他人进入桌子返回
+message ResOtherEnterTable {
+    SeatInfo seat = 1; // 进入桌子的其他玩家
+}
+
+// 炮台改变返回
+message ResBatteryChange {
+    sint64 playerId = 1; // 发炮玩家
+    double score = 2; // 炮分数
+    sint32 scoreIndex = 3; // 炮分数序号
+}
+
+// 子弹打死鱼返回
+message ResDie {
+    sint64 playerId = 1; // 玩家id
+    repeated FishDieInfo fishs = 2; // 死亡的鱼
+}
+
+// 游戏场景数据返回
+message ResRestore {
+    sint32 scenceId = 1; //场景
+    repeated SeatInfo seats = 2; // 桌子中的玩家信息
+    repeated FishInfo fishs = 3; // 场景的鱼
+    repeated EatBulletFishInfo eatBulletFishs = 4;
+}
+
+// 锁定返回
+message ResLock {
+    sint64 playerId = 1; // 玩家id
+    sint32 fishId = 2; // 锁定鱼
+}
+
+// 取消锁定返回
+message ResCancelLock {
+    sint64 playerId = 1; // 玩家id
+}
+
+// 金币变化消息
+message ResGoldChange {
+    sint64 playerId = 1; // 玩家id
+    double gold = 2; // 玩家金币
+}
+
+// 金币充值消息
+message ResGoldPay {
+    sint64 playerId = 1; // 玩家id
+    double gold = 2; // 玩家金币
+    double paygold = 3; // 充值金币
+}
+
+// 场景数据返回
+message ResScence {
+    sint32 scenceId = 1; // 场景
+    repeated FishInfo fishs = 2; // 场景的鱼
+}
+
+// 鱼的倍数更新
+message ResFishMultipleUpdate {
+    sint32 kind = 1; // 鱼的类型
+    sint32 addMultiple = 2; // 增加的倍数
+}
+
+// 代发碰撞玩家列表更新
+message ResInsteadPlayers {
+    repeated sint64 players = 1; // 代发碰撞玩家列表
+}
+
+//超时未操作退出游戏
+message ResTimeoutExit {
+    FishCode code = 1;
+}
+
+//停服退出游戏
+message ResStopServiceExit {
+    FishCode code = 1; 
+}
+
+//心跳
+message ResHeartbeat {
+}
+
+enum FishMessageId {
+    MESSAGE_ID_DEFAULT = 0;
+
+    ReqRooms_ID = 201101;
+	ReqCheckRoom_ID = 201102;
+    ReqEnterRoom_ID = 201103;
+    ReqFire_ID = 201105;
+    ReqHit_ID = 201107;
+    ReqPlusBattery_ID = 201109;
+    ReqMinusBattery_ID = 201111;
+    ReqExitRoom_ID = 201113;
+    ReqRestore_ID = 201115;
+    ReqLock_ID = 201117;
+    ReqCancelLock_ID = 201119;
+    ReqHeartbeat_ID = 201199;
+
+	ResRooms_ID = 201201;
+    ResCheckRoom_ID = 201202;
+    ResEnterRoom_ID = 201203;
+    ResExitRoom_ID = 201205;
+    ResOtherEnterTable_ID = 201207;
+    ResFire_ID = 201209;
+    ResBatteryChange_ID = 201211;
+    ResDie_ID = 201213;
+    ResRestore_ID = 201215;
+    ResLock_ID = 201217;
+    ResCancelLock_ID = 201219;
+    ResGoldChange_ID = 201222;
+    ResScence_ID = 201229;
+    ResFishMultipleUpdate_ID = 201231;
+    ResInsteadPlayers_ID = 201233;
+    ResTimeoutExit_ID = 201237;
+    ResGoldPay_ID = 201238;
+    ResStopServiceExit_ID = 201239;
+    ResHeartbeat_ID = 201299;
+}

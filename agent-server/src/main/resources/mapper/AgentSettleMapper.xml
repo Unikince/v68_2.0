@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 代理结算 -->
+<mapper namespace="com.dmg.agentserver.business.dao.AgentSettleDao">
+	<!-- 后台玩家详情获取结算信息 -->
+	<select id="getInfoForAdminUserDetails" resultType="com.dmg.agentserviceapi.business.agentsettlerecord.model.dto.AgentSettleRecordGifaudRes">
+		SELECT
+			/** 自得返佣*/
+			IFNULL(SUM(my_brokerage),0) AS myBrokerage,
+			/** 团队返佣*/
+			IFNULL(SUM(team_brokerage),0) AS teamBrokerage,
+			/** 自营业绩*/
+			IFNULL(SUM(my_performance),0) AS myPerformance,
+			/** 直属下级业绩*/
+			IFNULL(SUM(sub_directly_performance),0) AS subDirectlyPerformance,
+			/** 下级团队业绩*/
+			IFNULL(SUM(sub_team_performance),0) AS subTeamPerformance
+		FROM a_agent_settle_record
+		<where>
+			user_id=#{playerId}
+		</where>
+	</select>
+</mapper>

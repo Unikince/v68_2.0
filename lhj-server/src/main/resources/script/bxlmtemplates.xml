@@ -1,0 +1,6 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<scripts>
+	<file name="bxlmodds.xlsx">
+		<sheet class = "com.zyhy.lhj_server.game.bxlm.poi.template.BxlmOdds"/>
+	</file>
+</scripts>

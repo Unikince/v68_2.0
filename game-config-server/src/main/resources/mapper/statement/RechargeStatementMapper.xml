@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 充值报表 -->
+<mapper namespace="com.dmg.gameconfigserver.dao.statement.RechargeStatementDao">
+	<!-- 公共人工充值查询字段 -->
+	<sql id="commonPersionField">
+		/** 充值类型 */
+		'人工充值' AS `type`,
+		/** 充值总额 */
+		SUM(account_amount) AS sumRecharge,
+		/** 充值总人数 */
+		COUNT(DISTINCT user_id) AS sumPersion,
+		/** 充值总次数 */
+		COUNT(1) AS sumTimes,
+		/** 单笔最大 */
+		MAX(account_amount) AS maxRecharge,
+		/** 单笔最小 */
+		MIN(account_amount) AS minRecharge,
+		/** 平均人充值 */
+		IFNULL(SUM(account_amount) / COUNT(DISTINCT user_id),0) AS avePersionRecharge,
+		/** 平均次充值 */
+		IFNULL(SUM(account_amount) / COUNT(1), 0) AS avetTimesRecharge,
+		/** 平均人充次 */
+		IFNULL(COUNT(1) / COUNT(DISTINCT user_id), 0) AS avetPersionTimes
+	</sql>
+
+	<!-- 公共渠道充值查询字段 -->
+	<sql id="commonPlatformField">
+		/** 充值类型 */
+		'渠道充值' AS `type`,
+		/** 充值总额 */
+		SUM(recharge_amount) AS sumRecharge,
+		/** 充值总人数 */
+		COUNT(DISTINCT user_id) AS sumPersion,
+		/** 充值总次数 */
+		COUNT(1) AS sumTimes,
+		/** 单笔最大 */
+		MAX(recharge_amount) AS maxRecharge,
+		/** 单笔最小 */
+		MIN(recharge_amount) AS minRecharge,
+		/** 平均人充值 */
+		IFNULL(SUM(recharge_amount) / COUNT(DISTINCT user_id),0) AS avePersionRecharge,
+		/** 平均次充值 */
+		IFNULL(SUM(recharge_amount) / COUNT(1), 0) AS avetTimesRecharge,
+		/** 平均人充次 */
+		IFNULL(COUNT(1) / COUNT(DISTINCT user_id), 0) AS avetPersionTimes
+	</sql>
+	
+	<!-- 汇总-人工充值 -->
+	<select id="collectByPersion" resultType="com.dmg.gameconfigserver.model.vo.statement.recharge.RechargeStatementCollectRes">
+		SELECT 
+		  <include refid="commonPersionField" />
+		FROM
+		  t_persion_recharge_log 
+		WHERE `status` = 2
+	</select>
+	
+	<!-- 汇总-渠道充值 -->
+	<select id="collectByPlatform" resultType="com.dmg.gameconfigserver.model.vo.statement.recharge.RechargeStatementCollectRes">
+		SELECT 
+		  <include refid="commonPlatformField" />
+		FROM
+		  t_platform_recharge_log
+			<if test="reqVo.channel != null">
+				LEFT JOIN pay_channel ON t_platform_recharge_log.platform_id=pay_channel.id 
+			</if>
+		<where>
+			(order_status=15 OR order_status=20)
+			<if test="reqVo.channel != null">
+				AND pay_channel.channel=#{reqVo.channel}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 每日数据-人工充值 -->
+	<select id="dayDataByPersion" resultType="com.dmg.gameconfigserver.model.vo.statement.recharge.RechargeStatementDayDataRes">
+		SELECT 
+			/** 日期字符串 */
+			DATE_FORMAT(deal_date, '%Y-%m-%d') AS dayStr,
+		  <include refid="commonPersionField" />
+		FROM
+		  t_persion_recharge_log 
+		<where>
+			`status` = 2
+			<if test="reqVo.startDate != null">
+				AND DATE(deal_date) &gt;= DATE(#{reqVo.startDate}) 
+			</if>
+			<if test="reqVo.endDate != null">
+				AND DATE(deal_date) &lt;= DATE(#{reqVo.endDate}) 
+			</if>
+		</where>
+		GROUP BY dayStr 
+		ORDER BY dayStr DESC 
+	</select>
+	
+	<!-- 每日数据-渠道充值 -->
+	<select id="dayDataByPlatform" resultType="com.dmg.gameconfigserver.model.vo.statement.recharge.RechargeStatementDayDataRes">
+		SELECT 
+			/** 日期字符串 */
+			DATE_FORMAT(arrive_date, '%Y-%m-%d') AS dayStr,
+		  <include refid="commonPlatformField" />
+		FROM
+		  t_platform_recharge_log
+		<where>
+			(order_status=15 OR order_status=20)
+			<if test="reqVo.startDate != null">
+				AND DATE(arrive_date) &gt;= DATE(#{reqVo.startDate}) 
+			</if>
+			<if test="reqVo.endDate != null">
+				AND DATE(arrive_date) &lt;= DATE(#{reqVo.endDate}) 
+			</if>
+		</where>
+		GROUP BY dayStr 
+		ORDER BY dayStr DESC 
+	</select>
+	
+	
+	<!-- 游戏详情-渠道充值 -->
+	<select id="datailsCollectByPlatform" resultType="com.dmg.gameconfigserver.model.vo.statement.recharge.RechargeStatementDatailsCollectRes">
+		SELECT 
+			/** 充值渠道 */
+			pay_channel.channel as channel,
+		  <include refid="commonPlatformField" />
+		FROM
+		  t_platform_recharge_log
+			LEFT JOIN pay_channel ON t_platform_recharge_log.platform_id=pay_channel.id 
+		<where>
+			(order_status=15 OR order_status=20)
+		</where>
+		GROUP BY pay_channel.id 
+		ORDER BY pay_channel.id ASC
+	</select>
+	
+	<!-- 游戏详情-渠道充值 -->
+	<select id="datailsCollectDayDataByPlatform" resultType="com.dmg.gameconfigserver.model.vo.statement.recharge.RechargeStatementDatailsCollectDayDataRes">
+		SELECT 
+			/** 日期字符串 */
+			DATE_FORMAT(arrive_date, '%Y-%m-%d') AS dayStr,
+			/** 充值渠道 */
+			pay_channel.channel as channel,
+		  <include refid="commonPlatformField" />
+		FROM
+		  t_platform_recharge_log
+			<if test="reqVo.channel != null">
+				LEFT JOIN pay_channel ON t_platform_recharge_log.platform_id=pay_channel.id 
+			</if>
+		<where>
+			(order_status=15 OR order_status=20)
+			AND pay_channel.channel=#{reqVo.channel} 
+			<if test="reqVo.startDate != null">
+				AND DATE(arrive_date) &gt;= DATE(#{reqVo.startDate}) 
+			</if>
+			<if test="reqVo.endDate != null">
+				AND DATE(arrive_date) &lt;= DATE(#{reqVo.endDate}) 
+			</if>
+		</where>
+		GROUP BY dayStr 
+		ORDER BY dayStr DESC 
+	</select>
+
+</mapper>

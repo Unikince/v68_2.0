@@ -1,0 +1,6 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<scripts>
+	<file name="bqtpodds.xlsx">
+		<sheet class = "com.zyhy.lhj_server.game.bqtp.poi.template.BqtpOdds"/>
+	</file>
+</scripts>

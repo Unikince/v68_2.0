@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dmg.gameconfigserver.dao.config.email.EmailDao">
+
+    <select id="geEmailList" resultType="com.dmg.gameconfigserver.model.vo.config.email.EmailVO">
+        SELECT
+        *,t_dmg_email.modify_user_name AS nickName,
+        CASE WHEN send_date &gt; SYSDATE() THEN 0
+        WHEN <![CDATA[ SYSDATE() < expire_date ]]> AND SYSDATE() > send_date THEN 2
+        ELSE 1 END AS sendStatus
+        FROM t_dmg_email
+        WHERE 1 = 1
+        <if test="userId != null and userId != ''">
+            AND (user_ids LIKE CONCAT('%',#{userId},'%') OR user_ids IS NULL)
+        </if>
+        <if test="sysUserId != null and sysUserId != ''">
+            AND modify_user = #{sysUserId}
+        </if>
+        ORDER BY modify_date DESC
+    </select>
+</mapper>

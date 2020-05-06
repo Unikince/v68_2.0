@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 玩家报表 -->
+<mapper namespace="com.dmg.gameconfigserver.dao.statement.PlayerStatementDao">
+
+	<!-- 玩家详情获取玩家充值提款信息 -->
+	<select id="getPlayerChargeAndWithdrawInfo" resultType="com.dmg.gameconfigserver.model.vo.statement.player.PlayerChargeAndWithdrawInfo">
+		SELECT
+		  /** 总充值*/
+		  IFNULL(SUM(sum_recharge),0) AS sumRecharge,
+		  /** 总提款*/
+		  IFNULL(SUM(sum_withdraw),0) AS sumWithdraw,
+		  /*** 提存差 */
+		  IFNULL(SUM(sum_recharge)-SUM(sum_withdraw),0) AS diffRechargeSubWithdraw
+		FROM statement_player_user
+		<where>
+			user_id=#{playerId}
+		</where>
+	</select>
+
+	<!-- 公共查询字段 -->
+	<sql id="commonField">
+		/** 游戏次数 */
+		IFNULL(SUM(game_times),0) AS gameTimes,
+		/** 中奖次数 */
+		IFNULL(SUM(win_times),0) AS winTimes,
+		/** 中奖率 */
+		IFNULL(SUM(win_times) / SUM(game_times),0) AS winRatio,
+		/** 返奖率 */
+		IFNULL(SUM(sum_pay) / SUM(sum_bet),0) AS returnRate,
+		/** 服务费 */
+		IFNULL(SUM(charge),0) AS charge,
+		/** 总下注 */
+		IFNULL(SUM(sum_bet),0) AS sumBet,
+		/** 总赔付 */
+		IFNULL(SUM(sum_pay),0) AS sumPay,
+		/** 平均下注 */
+		IFNULL(SUM(sum_bet) / SUM(game_times),0) AS aveBet,
+		/** 平均赔付 */
+		IFNULL(SUM(sum_pay) / SUM(game_times),0) AS avePay,
+		/** 最大下注 */
+		IFNULL(MAX(max_bet),0) AS maxBet,
+		/** 最大赔付 */
+		IFNULL(MAX(max_pay),0) AS maxPay 
+	</sql>
+	
+	<sql id="commonGameField">
+		<include refid="commonField" />,
+		/** 游戏id */
+		game_id AS gameId,
+		/** 游戏名称 */
+		game_name AS gameName,
+		/** 总盈利 */
+		SUM(sum_win) AS sumWin
+	</sql>
+	
+	<!-- 汇总 -->
+	<select id="collect" resultType="com.dmg.gameconfigserver.model.vo.statement.player.common.PlayerStatementCommonInfoRes">
+		SELECT
+			<include refid="commonField" />,
+			/** 玩家ID */
+		  t_dmg_user.id AS playerId,
+		  /** 玩家昵称 */
+		  t_dmg_user.user_name AS nickname,
+		  /** 当前余额 */
+		  account_balance AS money,
+		  /** 总充值*/
+		  IFNULL(SUM(sum_recharge),0) AS sumRecharge,
+		  /** 总提款*/
+		  IFNULL(SUM(sum_withdraw),0) AS sumWithdraw,
+		  /*** 提存差 */
+		  IFNULL(SUM(sum_recharge)-SUM(sum_withdraw),0) AS diffRechargeSubWithdraw
+		FROM t_dmg_user
+	  	LEFT JOIN statement_player_user
+	    ON t_dmg_user.id = statement_player_user.user_id
+		<where>
+			<if test="reqVo.playerId != null">
+				AND t_dmg_user.id= #{reqVo.playerId}
+			</if>
+		</where>
+		GROUP BY t_dmg_user.id
+		ORDER BY t_dmg_user.id DESC
+	</select>
+	
+	<!-- 每日数据 -->
+	<select id="dayData" resultType="com.dmg.gameconfigserver.model.vo.statement.player.PlayerStatementDayDataRes">
+		SELECT
+			<include refid="commonField" />,
+			/** 日期字符串 */
+			day_str dayStr,
+			/** 玩家ID */
+		  user_id AS playerId,
+		  /** 玩家昵称 */
+		  nickname AS nickname,
+		  /** 总充值*/
+		  IFNULL(SUM(sum_recharge),0) AS sumRecharge,
+		  /** 总提款*/
+		  IFNULL(SUM(sum_withdraw),0) AS sumWithdraw,
+		  /*** 提存差 */
+		  IFNULL(SUM(sum_recharge)-SUM(sum_withdraw),0) AS diffRechargeSubWithdraw
+		FROM statement_player_user
+		<where>
+			AND user_id = #{reqVo.playerId} 
+			<if test="reqVo.startDate != null">
+				AND day_str &gt;= DATE(#{reqVo.startDate}) 
+			</if>
+			<if test="reqVo.endDate != null">
+				AND day_str &lt;= DATE(#{reqVo.endDate}) 
+			</if>
+		</where>
+		GROUP BY dayStr 
+		ORDER BY dayStr DESC 
+	</select>
+	
+	<!-- 每日数据_游戏详情 -->
+	<select id="dayDataDetails" resultType="com.dmg.gameconfigserver.model.vo.statement.player.PlayerStatementDayDataDetailsRes">
+		SELECT 
+			<include refid="commonGameField" />
+		FROM statement_player_game
+		<where>
+			AND user_id = #{reqVo.playerId} 
+			AND day_str = DATE(#{reqVo.gameDate})
+		</where>
+		GROUP BY game_id ORDER BY game_id ASC
+	</select>
+	
+	<!-- 游戏详情 -->
+	<select id="datailsCollect" resultType="com.dmg.gameconfigserver.model.vo.statement.player.PlayerStatementDatailsCollectRes">
+		SELECT 
+			<include refid="commonGameField" />
+		FROM statement_player_game
+		<where>
+			AND user_id = #{reqVo.playerId} 
+		</where>
+		GROUP BY game_id ORDER BY game_id ASC
+	</select>
+	
+	<!-- 游戏详情_每日数据 -->
+	<select id="datailsCollectDayData" resultType="com.dmg.gameconfigserver.model.vo.statement.player.PlayerStatementDatailsCollectDayDataRes">
+		SELECT 
+			/** 日期字符串 */
+			day_str dayStr,
+			<include refid="commonGameField" />
+		FROM statement_player_game
+		<where>
+			AND user_id = #{reqVo.playerId} 
+			AND game_id = #{reqVo.gameId} 
+			<if test="reqVo.startDate != null">
+				AND day_str &gt;= DATE(#{reqVo.startDate}) 
+			</if>
+			<if test="reqVo.endDate != null">
+				AND day_str &lt;= DATE(#{reqVo.endDate}) 
+			</if>
+		</where>
+		GROUP BY dayStr ORDER BY dayStr DESC
+	</select>
+</mapper>

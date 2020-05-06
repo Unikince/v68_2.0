@@ -1,0 +1,6 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<scripts>
+	<file name="lqjxodds.xlsx">
+		<sheet class = "com.zyhy.lhj_server.game.lqjx.poi.template.LqjxOdds"/>
+	</file>
+</scripts>

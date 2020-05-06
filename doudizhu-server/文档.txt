@@ -1,0 +1,202 @@
+﻿连接成功返回消息
+{"m":"8888","msg":"连接成功","res":0,"time":1566359943940}
+---------------------------------------------------客户端发送
+登陆
+m:Login
+
+进入房间
+m:EnterRoom
+data:{
+	roomId //房间id
+}
+
+玩家叫地主
+m:CallLandlord
+data:{
+	call //分数0,1,2,3
+}
+
+玩家出牌
+m:PlayCards
+data:{
+	cards:[] //玩家打出的牌,空为不出
+}
+
+托管
+m:AutoPlay
+
+请求退出房间
+m:ExitRoom
+---------------------------------------------------服务器发送(正确消息)
+登陆
+m:Login
+msg:
+{
+	id //玩家id
+	gold //玩家金币
+	roomList:
+	[
+		id //房间id
+		name //房间名称
+		lower //进入下限
+		baseScore //底分	
+	]
+}
+
+进入房间结果
+m:EnterRoom
+msg:
+{    
+	roomInfo://房间信息
+	{
+		id //房间id
+		name //房间名称
+		lower //进入下限
+		baseScore //底分
+	}
+	seats: //桌子中的玩家信息
+	[
+		order //座位顺序
+		playerId //玩家id
+		nickname //昵称
+		headImg //头像
+		gold //金币
+	]
+}
+
+其他人进入桌子
+m:OtherEnterTable
+msg:
+{    
+	order //座位顺序
+	playerId //玩家id
+	nickname //昵称
+	icon //头像
+	gold //金币
+}
+
+游戏恢复(叫地主和游戏阶段有效，等待阶段掉线直接踢出)
+m:Restore
+msg:
+{
+	step //2:叫地主,3:游戏
+	roomInfo://房间信息
+	{
+		id //房间id
+		name //房间名称
+		lower //进入下限
+		baseScore //底分
+	}
+	seats: //桌子中的玩家信息
+	[
+		order //座位顺序
+		playerId //玩家id
+		nickname //昵称
+		headImg //头像
+		gold //金币
+		cardsNum // 牌的数量
+		isAuto // 是否托管
+	]
+
+	landlord //地主(0为没有地主)
+	callScore // 地主倍数
+	cards:[] //玩家的牌
+	leftCards:[] //剩余的牌
+	//-------------------step为2有效
+	nextCallLandlordPlayer //下一个叫地主玩家
+	nextCallLandlordLeftTime //下一个叫地主玩家操作剩余时间(秒)
+	//-------------------step为3有效
+	hiddenCards:[] //底牌
+	bombNum //炸弹数
+	prePlayer //上一个出牌玩家
+	prePlayCardsType //上一个玩家出的牌的类型(1:单牌，2:对子,3:三不带,4:三代单，5:三带对,6:单顺,7:双顺,8:三顺,9:飞机带单,10:飞机带队,11:炸弹,12:王炸,13:四带单,14:四带队)
+	prePlayCards:[] //上一个玩家出的牌
+	nextPlayer //下一个出牌玩家
+	nextPlayerLeftTime //下一个出牌玩家操作剩余时间(秒)
+}
+
+玩家叫地主返回
+m:CallLandlord
+msg:
+{    
+	playerId //叫牌的玩家
+	call //分数0,1,2,3
+  landlord //地主玩家id
+  nextCallPlayer //下一个叫牌的玩家(0代表没有,叫地主结束)
+}
+
+准备开始游戏
+m:WillDealCards
+
+发送底牌消息
+m:HiddenCards
+msg:
+[]//底牌
+
+发送自己牌
+m:DealCards
+msg:
+{
+	callPlayerId //首先出牌的玩家
+	cards:[] //玩家的牌
+}
+
+出牌
+m:PlayCards
+msg:
+{
+	playerId //出牌的玩家
+	nextPlayerId //下一个出牌玩家
+	cardsType //玩家出的牌的类型(0:不出,1:单牌，2:对子,3:三不带,4:三代单，5:三带对,6:单顺,7:双顺,8:三顺,9:飞机带单,10:飞机带队,11:炸弹,12:王炸,13:四带单,14:四带队)
+	cards:[] //玩家出的牌
+}
+
+托管
+m:AutoPlay
+msg:
+{
+	playerId //玩家id
+	isAuto //是否托管
+}
+
+游戏结束
+m:GameOver
+msg:
+{
+	baseScore //底分
+	callScore // 地主倍数
+	spring //是否春天(包含反春)(值为1或者2)
+	bombNum //炸弹数
+	playerBills: //结算信息
+	[
+		playerId //玩家id(0:代表座位上没有人)
+		nickName //昵称
+		landlord //是否地主
+		cards:[] //玩家剩余的牌
+		beforeGold //游戏前金币
+		afterGold //游戏后金币
+		winGold //输赢金币
+	]
+}
+
+退出房间
+m:ExitRoom
+msg:玩家id
+---------------------------------------------------服务器发送(错误消息)
+
+进入房间错误
+m:EnterRoom
+
+res:1	//玩家不存在
+res:2 //玩家进入的房间不存在
+res:3 //房间未开放
+res:4 //房间已满
+res:5 //金币不足进入当前房间
+res:99 //服务器停止
+
+
+玩家出牌失败
+m:PlayCards
+res:1 //牌型不符合规则
+res:2 //出牌数量或牌型不匹配
+res:3 //牌没有上家大

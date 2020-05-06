@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dmg.gameconfigserver.dao.GameInfoDao">
+
+    <select id="getGameFile" resultType="com.dmg.gameconfigserver.model.vo.GameFileVO">
+        SELECT
+        t_game_info.game_id AS gameId,
+        t_game_info.game_name AS gameName,
+        t_file_base_config.file_id AS fileId,
+        t_file_base_config.file_name AS fileName
+        FROM t_game_info
+        INNER JOIN t_file_base_config ON t_game_info.game_id=t_file_base_config.game_id
+    </select>
+</mapper>
